@@ -1,120 +1,113 @@
-# WiFi_Web_Template
+# ESP32-S3 Wi-Fi Web Template
 
-## 工程定位
+English | [中文](README.zh-CN.md)
 
-这是面向 `ESP32-S3-WROOM-1-N16R8` 的本地 Wi-Fi 网页交互模板，使用 ESP-IDF `v6.0.2`。设备通过临时配置热点完成网页配网，连接手机热点或路由器后，在局域网内提供中文控制台、REST API 和 WebSocket 实时状态。
+> A local Wi-Fi web-interaction template for `ESP32-S3-WROOM-1-N16R8` and ESP-IDF `v6.0.2`, featuring captive-portal provisioning, a web console, REST APIs, and real-time WebSocket status updates.
 
-当前示例使用 GPIO48 驱动板载单颗 WS2812B，用于演示网页到真实硬件的开关、颜色和亮度控制。完整 GPIO、供电、Flash 和 PSRAM 约束见 [`doc/HARDWARE.md`](doc/HARDWARE.md)；修改硬件相关代码前必须先阅读该文件。
+## Project Overview
 
+This template uses a temporary setup access point for web-based Wi-Fi provisioning. After connecting to a phone hotspot or router, the device exposes a web console, REST API, and real-time WebSocket status on the local network.
 
-## 固定环境
+The example drives the onboard single WS2812B through GPIO48 to demonstrate web control of power, color, and brightness. See [`doc/HARDWARE.md`](doc/HARDWARE.md) for GPIO, power, Flash, and PSRAM constraints; read it before changing hardware-related code.
 
-- 芯片：ESP32-S3-WROOM-1-N16R8
-- Flash：16 MB QSPI
-- 从本模板创建工程时，应完整利用板载 16 MB Flash，并根据实际功能按需设置分区。
-- PSRAM：8 MB Octal
-- ESP-IDF：`v6.0.2`
-- 构建目标：`esp32s3`
-- ESP-IDF 路径：由 `tools/idf.ps1` 根据本机环境解析
-- 工具路径：由 `tools/idf.ps1` 根据本机环境解析
+## Fixed Environment
 
-AI、自动化任务和普通 PowerShell 必须统一通过工程内的 `tools/idf.ps1` 调用 ESP-IDF。该脚本会优先使用 `ESP_IDF_POWERSHELL_PROFILE` 或 `IDF_TOOLS_PATH` 指定的本机环境，并切换到工程根目录；不要依赖 VS Code 终端状态或预先手动执行激活脚本。
+- Chip: ESP32-S3-WROOM-1-N16R8
+- Flash: 16 MB QSPI
+- New projects should use the full onboard 16 MB Flash and configure partitions for the actual feature set.
+- PSRAM: 8 MB Octal
+- ESP-IDF: `v6.0.2`
+- Build target: `esp32s3`
+- ESP-IDF path: resolved by `tools/idf.ps1` for the local machine
+- Tool path: resolved by `tools/idf.ps1` for the local machine
+
+AI tasks, automation, and ordinary PowerShell commands must invoke ESP-IDF through the project-local `tools/idf.ps1`. It prefers the environment specified by `ESP_IDF_POWERSHELL_PROFILE` or `IDF_TOOLS_PATH` and switches to the project root; do not depend on VS Code terminal state or a manually activated shell.
 
 ```powershell
-.\tools\idf.ps1 --version                 # 应输出 ESP-IDF v6.0.2
+.\tools\idf.ps1 --version                 # Should print ESP-IDF v6.0.2
 .\tools\idf.ps1 set-target esp32s3
 .\tools\idf.ps1 menuconfig
 .\tools\idf.ps1 build
-.\tools\idf.ps1 -p COMx flash monitor     # COMx 替换为 CH340 串口，Ctrl+] 退出
+.\tools\idf.ps1 -p COMx flash monitor     # Replace COMx with the CH340 port; press Ctrl+] to exit
 ```
 
-不带参数执行 `.\tools\idf.ps1` 时默认构建工程。
+Running `.\tools\idf.ps1` without arguments builds the project by default.
 
-项目设置位于 `Component config > WiFi Web Template`：
+Project settings are under `Component config > WiFi Web Template`:
 
-- mDNS 主机名默认为 `esp32s3-web`。
-- 配置热点密码默认为 `esp32setup`，长度必须为 8–63 个字符。
-- 已保存网络连接失败 30 秒后开启配置热点。
-- 新网络验证超时默认为 20 秒。
+- The default mDNS hostname is `esp32s3-web`.
+- The default setup-AP password is `esp32setup` and must be 8–63 characters.
+- The setup AP opens after 30 seconds if a saved network cannot connect.
+- New-network verification times out after 20 seconds by default.
 
+## Project Structure
 
-## 工程结构
+- `components/main/app_main.c`: application entry point; starts NVS, business components, and callbacks.
+- `components/wifi_manager/`: Wi-Fi STA/AP state machine, reconnection, mDNS, and scanning; `wifi_credentials.c/.h` privately handles NVS credential transactions.
+- `components/web_ui/web_server.c`: HTTP lifecycle, embedded resources, captive-portal routes, and WebSocket broadcasts.
+- `components/web_ui/web_api.c`: REST handlers, input validation, and unified status JSON.
+- `components/web_ui/web/`: Chinese provisioning pages and business-console resources.
+- `components/ws2812_led/`: public GPIO48 WS2812B control API and private RMT encoder.
+- `components/provision_button/`: long-press detection for the GPIO0 BOOT button, triggering reprovisioning through a callback.
+- `components/dns_server/`: DNS redirection component based on the official ESP-IDF captive-portal example.
+- `components/main/Kconfig.projbuild`: hostname, setup-AP password, and timeout parameters.
+- `sdkconfig.defaults`: ESP32-S3 Flash, Octal PSRAM, and WebSocket defaults.
 
-- `components/main/app_main.c`：应用入口，只负责 NVS、各业务组件和回调的启动顺序。
-- `components/wifi_manager/`：Wi-Fi STA/AP 状态机、重连、mDNS 和网络扫描；`wifi_credentials.c/.h` 私有负责 NVS 凭据事务。
-- `components/web_ui/web_server.c`：HTTP 生命周期、嵌入资源、Captive Portal 路由和 WebSocket 广播。
-- `components/web_ui/web_api.c`：REST 处理器、输入校验与统一状态 JSON。
-- `components/web_ui/web/`：中文配网页面和业务控制台资源。
-- `components/ws2812_led/`：GPIO48 WS2812B 的公开控制接口与私有 RMT 编码器。
-- `components/provision_button/`：GPIO0 BOOT 长按检测，通过回调触发重新配网。
-- `components/dns_server/`：基于 ESP-IDF 官方 Captive Portal 示例的 DNS 重定向组件。
-- `components/main/Kconfig.projbuild`：主机名、配置热点密码和超时参数。
-- `sdkconfig.defaults`：ESP32-S3 Flash、Octal PSRAM 和 WebSocket 默认配置。
+All project-owned code is under `components/`; the application entry component is `components/main/`, and there is no separate root-level `main/` directory. C implementations and private headers stay in each component root; only stable public headers for other components belong in `include/`. Web resources remain under `web/`. Do not move private headers into public `include/`. Component dependencies must be declared explicitly through `PRIV_REQUIRES`. Managed dependencies are pinned by each component's `idf_component.yml` and the root `dependencies.lock`, currently including Espressif cJSON and mDNS. Do not edit `managed_components/` directly.
 
-所有自有代码均放在 `components/`，应用入口组件为 `components/main/`，工程根目录不再单独设置 `main/`。为减少目录嵌套，C 实现和私有头文件直接放在各组件根目录，只有供其他组件使用的稳定公共头文件放在 `include/`。网页资源保留在 `web/`。不要把私有头文件移入公共 `include/`。组件间通过 `PRIV_REQUIRES` 显式声明依赖，不得依靠隐式传递包含路径。托管依赖分别由组件内的 `idf_component.yml` 和根目录 `dependencies.lock` 固定，目前包括 Espressif cJSON 与 mDNS。不要直接修改 `managed_components/`。
+## Provisioning and Access Flow
 
+1. Connect a phone to `ESP32S3-Setup-XXXX`; the default password is `esp32setup`.
+2. The provisioning page usually opens automatically. If it does not, visit <http://192.168.4.1/>.
+3. Select or enter a Wi-Fi network and submit its password. The device tests the candidate in RAM and saves it only after obtaining an IP address.
+4. After the target IP is shown, the setup AP closes after about five seconds.
+5. Switch the phone to the target network and visit the IP from the serial log or <http://esp32s3-web.local/>.
 
-## 配网和访问流程
+When the phone itself is the hotspot, some systems cannot resolve mDNS for hotspot clients. Use the phone's hotspot-client list or the serial log to find the ESP32 IP.
 
-1. 手机连接 `ESP32S3-Setup-XXXX`，默认密码为 `esp32setup`。
-2. 系统通常会自动弹出配网页；未弹出时访问 <http://192.168.4.1/>。
-3. 选择或输入 Wi-Fi，填写密码并提交。设备先在 RAM 中试连，成功获取 IP 后才保存。
-4. 页面显示目标 IP 后，配置热点约 5 秒后关闭。
-5. 将手机切换到目标网络，访问串口日志中的 IP 或 <http://esp32s3-web.local/>。
+While online, reprovisioning can be started from the business page. If the web UI is unavailable, hold BOOT for about five seconds while the firmware is running. Do not hold BOOT during power-on or reset, or the device will enter download mode.
 
-手机自身作为热点时，部分系统无法解析热点客户端的 mDNS。此时从手机热点客户端列表或串口日志获取 ESP32 的 IP。
+## HTTP and WebSocket APIs
 
-正常联网时可以通过业务页重新配网。网页不可用时，在固件已经运行的情况下长按 BOOT 约 5 秒。不要在上电或复位时持续按住 BOOT，否则会进入下载模式。
-
-
-## HTTP 和 WebSocket 接口
-
-| 方法 | 路径 | 用途 |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/wifi/scan` | 扫描附近网络 |
-| `POST` | `/api/wifi/connect` | 提交 `{"ssid":"...","password":"..."}` 并异步验证 |
-| `GET` | `/api/wifi/state` | 查询配网、验证和联网状态 |
-| `POST` | `/api/wifi/reprovision` | 清除凭据并进入配网模式 |
-| `GET` | `/api/status` | 获取完整设备状态 |
-| `PUT` | `/api/led` | 设置 `{"on":true,"color":"#2A7CFF","brightness":60}` |
-| `PUT` | `/api/message` | 设置 `{"message":"文本"}`，最多 96 字节 |
-| `GET` | `/ws` | 升级为 WebSocket 并接收状态推送 |
+| `GET` | `/api/wifi/scan` | Scan nearby networks |
+| `POST` | `/api/wifi/connect` | Submit `{"ssid":"...","password":"..."}` and verify asynchronously |
+| `GET` | `/api/wifi/state` | Query provisioning, verification, and network state |
+| `POST` | `/api/wifi/reprovision` | Clear credentials and enter provisioning mode |
+| `GET` | `/api/status` | Get complete device status |
+| `PUT` | `/api/led` | Set `{"on":true,"color":"#2A7CFF","brightness":60}` |
+| `PUT` | `/api/message` | Set `{"message":"text"}`, up to 96 bytes |
+| `GET` | `/ws` | Upgrade to WebSocket and receive status updates |
 
-修改状态 JSON 时必须同步检查业务页面字段、`/api/status`、`/api/wifi/state` 和 WebSocket 消费端，避免接口漂移。
+When changing status JSON, also check the business-page fields, `/api/status`, `/api/wifi/state`, and WebSocket consumers to prevent interface drift.
 
+## Development and Acceptance Requirements
 
-## 开发与验收要求
-
-每次修改至少执行：
+Run at least the following after every change:
 
 ```powershell
 .\tools\idf.ps1 build
 ```
 
-涉及网页脚本时额外执行 JavaScript 语法检查，并确认下列资源均能加载：
+For web-script changes, additionally run JavaScript syntax checks and verify that `/`, `/app.css`, `/app.js`, and `/portal.js` load correctly.
 
-- `/`
-- `/app.css`
-- `/app.js`
-- `/portal.js`
+For network-state-machine changes, real-device testing must cover at least:
 
-涉及网络状态机时，真机至少覆盖：
+- First boot without credentials, setup AP, and captive-portal access
+- Open, WPA2, hidden-SSID, and incorrect-password networks
+- Failed candidate credentials not replacing a usable saved network
+- Automatic fallback to provisioning after the target AP disappears, followed by reconnection after recovery
+- NVS persistence after successful provisioning and power-cycle restart
+- Reprovisioning from both the web button and a long BOOT press
+- Phone-hotspot mode and phone/device-on-the-same-router mode
+- Real-time synchronization of lights, text, and status in multiple browsers
+- HTTP 4xx responses for malformed JSON, invalid colors, out-of-range brightness, and oversized text
 
-- 首次启动无凭据，配置热点和 Captive Portal 可访问。
-- 开放网络、WPA2 网络、隐藏 SSID 和错误密码。
-- 错误候选凭据不会覆盖原有可用网络。
-- 目标热点关闭后自动回退配网，恢复后能重新连接。
-- 配网成功后 NVS 保存生效，掉电重启能够恢复。
-- 网页按钮和 BOOT 长按均能重新配网。
-- 手机热点模式及手机与设备同路由器模式均可访问。
-- 多个浏览器的灯光、文本和状态能够实时同步。
-- 畸形 JSON、非法颜色、越界亮度和超长文本返回 HTTP 4xx。
+Before flashing, confirm that the serial port belongs to the CH340 development board; do not select a Bluetooth virtual COM port.
 
-烧录前确认串口确实属于 CH340 开发板，不要把蓝牙虚拟 COM 口当作目标端口。
+## Security Notes
 
-
-## 安全说明
-
-- Wi-Fi 凭据保存在普通 NVS；未启用 Flash 加密时不属于加密存储。
-- 配置热点使用 WPA2，但业务接口是无认证的明文 HTTP。
-- 首版不包含 HTTPS、云服务、OTA、BLE 配网或静态 IP，不要在未明确扩大需求时擅自加入这些功能。
+- Wi-Fi credentials are stored in ordinary NVS and are not encrypted at rest unless Flash encryption is enabled.
+- The setup AP uses WPA2, but business APIs are unauthenticated plaintext HTTP.
+- The first version does not include HTTPS, cloud services, OTA, BLE provisioning, or static IP. Do not add these features without explicitly expanding the requirements.
