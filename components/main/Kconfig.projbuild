@@ -1,0 +1,26 @@
+menu "WiFi Web Template"
+
+    config WIFI_WEB_HOSTNAME
+        string "mDNS hostname"
+        default "esp32s3-web"
+        help
+            Device is normally reachable at http://<hostname>.local/.
+
+    config WIFI_WEB_SETUP_PASSWORD
+        string "Provisioning AP WPA2 password"
+        default "esp32setup"
+        help
+            Must contain 8 to 63 characters. Invalid values fall back to
+            esp32setup at runtime.
+
+    config WIFI_WEB_FALLBACK_SECONDS
+        int "Seconds before opening provisioning AP"
+        range 10 300
+        default 30
+
+    config WIFI_WEB_CANDIDATE_TIMEOUT_SECONDS
+        int "Candidate Wi-Fi validation timeout"
+        range 10 60
+        default 20
+
+endmenu

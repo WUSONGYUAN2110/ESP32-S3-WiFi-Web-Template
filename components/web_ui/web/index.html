@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>ESP32-S3 控制台</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero dashboard-hero">
+      <div>
+        <div class="eyebrow">ESP32-S3 · LOCAL CONTROL</div>
+        <h1>设备控制台</h1>
+        <p id="networkSummary">正在读取设备状态…</p>
+      </div>
+      <div id="statePill" class="pill pending"><span></span><b>正在连接</b></div>
+    </header>
+
+    <section class="metric-grid">
+      <article class="metric"><span>信号强度</span><strong id="rssi">--</strong><small>dBm</small></article>
+      <article class="metric"><span>空闲内存</span><strong id="heap">--</strong><small>KB</small></article>
+      <article class="metric"><span>运行时间</span><strong id="uptime">--</strong><small>小时</small></article>
+      <article class="metric"><span>实时客户端</span><strong id="clients">--</strong><small>WebSocket</small></article>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="card chart-card">
+        <div class="section-head"><div><span class="step">LIVE</span><h2>运行趋势</h2></div><span class="muted">最近 60 秒</span></div>
+        <canvas id="chart" height="220" aria-label="RSSI 和内存实时趋势"></canvas>
+        <div class="legend"><span class="legend-rssi">RSSI</span><span class="legend-heap">空闲内存</span></div>
+      </article>
+
+      <article class="card">
+        <div class="section-head"><div><span class="step">GPIO48</span><h2>板载 RGB 灯</h2></div><label class="switch"><input id="ledOn" type="checkbox"><i></i></label></div>
+        <div class="color-control">
+          <input id="ledColor" type="color" value="#2a7cff" aria-label="灯光颜色">
+          <div><b id="colorText">#2A7CFF</b><span>WS2812B · GRB</span></div>
+        </div>
+        <label>亮度 <output id="brightnessText">60%</output>
+          <input id="brightness" type="range" min="0" max="100" value="60">
+        </label>
+        <div id="ledResult" class="inline-result"></div>
+      </article>
+
+      <article class="card">
+        <div class="section-head"><div><span class="step">TEXT</span><h2>文本交互示例</h2></div></div>
+        <p class="muted">演示 REST 写入与 WebSocket 多客户端同步，重启后恢复默认值。</p>
+        <form id="messageForm">
+          <label>设备消息
+            <textarea id="message" maxlength="96" rows="3"></textarea>
+          </label>
+          <button class="button primary" type="submit">发送到设备</button>
+        </form>
+        <div id="messageResult" class="inline-result"></div>
+      </article>
+
+      <article class="card device-card">
+        <div class="section-head"><div><span class="step">NET</span><h2>网络与维护</h2></div></div>
+        <dl>
+          <div><dt>Wi‑Fi</dt><dd id="ssid">--</dd></div>
+          <div><dt>IP 地址</dt><dd id="ip">--</dd></div>
+          <div><dt>访问地址</dt><dd>esp32s3-web.local</dd></div>
+        </dl>
+        <button id="reprovision" class="button danger" type="button">清除凭据并重新配网</button>
+        <p class="hint">也可在设备运行时长按 BOOT 约 5 秒。</p>
+      </article>
+    </section>
+    <footer>本地 HTTP 模板 · 数据不会发送到互联网</footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

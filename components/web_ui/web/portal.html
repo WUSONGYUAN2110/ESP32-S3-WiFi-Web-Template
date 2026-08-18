@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>ESP32-S3 网络配置</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main class="shell narrow">
+    <header class="hero">
+      <div class="eyebrow">ESP32-S3 · 首次设置</div>
+      <h1>连接设备到 Wi‑Fi</h1>
+      <p>选择手机热点或路由器，验证成功后设备才会保存新密码。</p>
+      <div id="statePill" class="pill pending"><span></span><b>等待配置</b></div>
+    </header>
+
+    <section class="card">
+      <div class="section-head">
+        <div><span class="step">01</span><h2>选择网络</h2></div>
+        <button id="scanButton" class="button secondary" type="button">重新扫描</button>
+      </div>
+      <div id="networkList" class="network-list" aria-live="polite">
+        <div class="empty">正在查找附近的 Wi‑Fi…</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><span class="step">02</span><h2>输入凭据</h2></div></div>
+      <form id="wifiForm">
+        <label>Wi‑Fi 名称
+          <input id="ssid" name="ssid" maxlength="32" autocomplete="off" required placeholder="也可输入隐藏网络名称">
+        </label>
+        <label>Wi‑Fi 密码
+          <div class="input-action">
+            <input id="password" name="password" type="password" maxlength="63" autocomplete="new-password" placeholder="开放网络请留空">
+            <button id="togglePassword" type="button" aria-label="显示或隐藏密码">显示</button>
+          </div>
+        </label>
+        <button id="connectButton" class="button primary wide" type="submit">验证并连接</button>
+      </form>
+      <div id="result" class="notice hidden" role="status"></div>
+    </section>
+
+    <footer>配置地址：192.168.4.1 · 新凭据仅在联网成功后写入</footer>
+  </main>
+  <script src="/portal.js"></script>
+</body>
+</html>
